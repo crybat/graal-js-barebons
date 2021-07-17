@@ -12,7 +12,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <graalvm.version>21.1.0</graalvm.version>
-<!--        <compiler.dir>${project.build.directory}/compiler</compiler.dir>-->
+        <compiler.dir>${project.build.directory}/compiler</compiler.dir>
     </properties>
 
     <dependencies>
@@ -27,40 +27,17 @@
             <artifactId>js-scriptengine</artifactId>
             <version>${graalvm.version}</version>
         </dependency>
-
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.12.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.commercetools.sdk.jvm.core</groupId>
-            <artifactId>commercetools-models</artifactId>
-            <version>1.63.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.schibsted.spt.data</groupId>
-            <artifactId>jslt</artifactId>
-            <version>0.1.11</version>
-        </dependency>
-
-        <!-- Swagger -->
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-boot-starter</artifactId>
-            <version>3.0.0</version>
+            <groupId>org.graalvm.tools</groupId>
+            <artifactId>profiler</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-models</artifactId>
-            <version>1.6.2</version>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-parser</artifactId>
-            <version>1.0.54</version>
+            <groupId>org.graalvm.tools</groupId>
+            <artifactId>chromeinspector</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -80,114 +57,38 @@
 
     <build>
         <plugins>
+
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.12.0</version>
-
-                <configuration>
-                    <installDirectory>target</installDirectory>
-                </configuration>
-
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
                 <executions>
                     <execution>
-                        <id>install node</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>install-node-and-npm</goal>
+                            <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v14.17.3</nodeVersion>
-                        </configuration>
-                    </execution>
-
-                    <!-- https://github.com/eirslett/frontend-maven-plugin/issues/869 always runs unfortunately, should
-                     probably be taken and run manually not to slow down the phase -->
-                    <execution>
-                        <id>npm</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-
-                        <phase>generate-resources</phase>
-
-                        <configuration>
-                            <arguments>ci</arguments>
-                        </configuration>
-                    </execution>
-
-                    <execution>
-                        <id>lint</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-
-                        <phase>compile</phase>
-
-                        <configuration>
-                            <arguments>run lint:fix</arguments>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>pintomau.js.Main</mainClass>
+                                </transformer>
+                            </transformers>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>classworlds:classworlds</exclude>
+                                    <exclude>junit:junit</exclude>
+                                    <exclude>jmock:*</exclude>
+                                    <exclude>*:xml-apis</exclude>
+                                    <exclude>org.apache.maven:lib:tests</exclude>
+                                    <exclude>log4j:log4j:jar:</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            <!--            <plugin>-->
-            <!--                <artifactId>maven-surefire-plugin</artifactId>-->
-            <!--                <version>2.22.2</version>-->
-            <!--                <configuration>-->
-            <!--                    <argLine>-XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI &#45;&#45;module-path=${compiler.dir} &#45;&#45;upgrade-module-path=${compiler.dir}/compiler.jar:${compiler.dir}/compiler-management.jar</argLine>-->
-            <!--                </configuration>-->
-            <!--            </plugin>-->
 
-            <!--            <plugin>-->
-            <!--                <groupId>org.apache.maven.plugins</groupId>-->
-            <!--                <artifactId>maven-dependency-plugin</artifactId>-->
-            <!--                <version>2.10</version>-->
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>copy</id>-->
-            <!--                        <phase>process-test-classes</phase>-->
-            <!--                        <goals>-->
-            <!--                            <goal>copy</goal>-->
-            <!--                        </goals>-->
-            <!--                        <configuration>-->
-            <!--                            <artifactItems>-->
-            <!--                                <artifactItem>-->
-            <!--                                    <groupId>org.graalvm.compiler</groupId>-->
-            <!--                                    <artifactId>compiler</artifactId>-->
-            <!--                                    <version>${graalvm.version}</version>-->
-            <!--                                    <type>jar</type>-->
-            <!--                                    <overWrite>true</overWrite>-->
-            <!--                                    <destFileName>compiler.jar</destFileName>-->
-            <!--                                </artifactItem>-->
-            <!--                                <artifactItem>-->
-            <!--                                    <groupId>org.graalvm.compiler</groupId>-->
-            <!--                                    <artifactId>compiler-management</artifactId>-->
-            <!--                                    <version>${graalvm.version}</version>-->
-            <!--                                    <type>jar</type>-->
-            <!--                                    <overWrite>true</overWrite>-->
-            <!--                                    <destFileName>compiler-management.jar</destFileName>-->
-            <!--                                </artifactItem>-->
-            <!--                                <artifactItem>-->
-            <!--                                    <groupId>org.graalvm.truffle</groupId>-->
-            <!--                                    <artifactId>truffle-api</artifactId>-->
-            <!--                                    <version>${graalvm.version}</version>-->
-            <!--                                    <type>jar</type>-->
-            <!--                                    <overWrite>true</overWrite>-->
-            <!--                                    <destFileName>truffle-api.jar</destFileName>-->
-            <!--                                </artifactItem>-->
-            <!--                                <artifactItem>-->
-            <!--                                    <groupId>org.graalvm.sdk</groupId>-->
-            <!--                                    <artifactId>graal-sdk</artifactId>-->
-            <!--                                    <version>${graalvm.version}</version>-->
-            <!--                                    <type>jar</type>-->
-            <!--                                    <overWrite>true</overWrite>-->
-            <!--                                    <destFileName>graal-sdk.jar</destFileName>-->
-            <!--                                </artifactItem>-->
-            <!--                            </artifactItems>-->
-            <!--                            <outputDirectory>${compiler.dir}</outputDirectory>-->
-            <!--                        </configuration>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--            </plugin>-->
         </plugins>
     </build>
 
